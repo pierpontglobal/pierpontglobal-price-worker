@@ -1,0 +1,15 @@
+version: '2.1'
+
+services:
+  ppg-worker:
+    restart: always
+    user: root
+    container_name: ppg-worker
+    build: .
+    environment:
+      - IDENTITY_URL=http://192.168.1.81:3000
+      - USERNAME=admin
+      - PASSWORD=WefrucaT7TAhl4weNUdr
+      - WEB_SOCKET_URL=ws://192.168.1.81:3000
+      - TARGET_USER=pierpontllc
+      - TARGET_PASSWORD=Kittie123!

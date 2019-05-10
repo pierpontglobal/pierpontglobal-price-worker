@@ -1,12 +1,16 @@
 import websocket
 import json
 import PriceWorker
+import requests
+import os
+import logging
 
 try:
     import thread
 except ImportError:
     import _thread as thread
 import time
+
 
 def on_message(ws, message):
     data = json.loads(message)
@@ -16,13 +20,30 @@ def on_message(ws, message):
         print data['message']
         if (action == "query_mmr"):
             priceWorker.get_mmr(data_message, ws)
-    except Exception,e: None
+    except Exception, e:
+        None
+
 
 def on_error(ws, error):
     print(error)
 
+
 def on_close(ws):
     print("### closed ###")
+
+
+def get_token():
+    url = os.environ['IDENTITY_URL'] + "/oauth/token"
+
+    payload = "{\"username\": \"" + os.environ['USERNAME'] + "\",\"password\": \"" + \
+        os.environ['PASSWORD'] + "\",\"grant_type\": \"password\"}"
+    headers = {
+        'Content-Type': "application/json",
+    }
+
+    response = requests.request("POST", url, data=payload, headers=headers)
+    return json.loads(response.text)['access_token']
+
 
 def on_open(ws):
     def run(*args):
@@ -36,13 +57,15 @@ def on_open(ws):
 
 
 if __name__ == "__main__":
+    logging.debug('Starting price worker')
+    token = get_token()
     priceWorker = PriceWorker.PriceWorker()
 
     websocket.enableTrace(True)
-    ws = websocket.WebSocketApp("wss://api.pierpontglobal.com/cable?token=63dfd03b8c2a3bab112495489c64dcf92205a9d73449b3ca5c02132e6d08ddee",
-                              on_message = on_message,
-                              on_error = on_error,
-                              on_close = on_close)
+    ws = websocket.WebSocketApp(os.environ['WEB_SOCKET_URL'] + "/cable?token=" + token,
+                                on_message=on_message,
+                                on_error=on_error,
+                                on_close=on_close)
     ws.on_open = on_open
     while True:
         ws.run_forever()
